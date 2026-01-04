@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/budget_model.dart';
 
 class BudgetApiService {
-  final String baseUrl = "http://10.173.166.186:8000"; // IP laptop Anda - Server berjalan di direktori backend
+  final String baseUrl = "http://10.173.166.186:8000"; // Server berjalan di direktori backend
 
   // GET semua anggaran
   Future<List<BudgetModel>> getBudgets() async {

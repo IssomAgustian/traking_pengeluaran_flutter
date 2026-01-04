@@ -4,8 +4,8 @@ import '../models/transaction_model.dart';
 
 class ApiService {
   // PENTING: Ketik ulang baris ini manual jangan copy-paste untuk menghindari error spasi/karakter aneh
-  final String baseUrl = "http://10.173.166.186:8000"; // IP laptop Anda - Server berjalan di direktori backend
-  // For testing with local server, use: http://10.173.166.186:8000 (Android emulator) or http://localhost:8000 (iOS simulator) 
+  final String baseUrl = "http://10.173.166.186:8000"; // Server berjalan di direktori backend
+  // For testing with local server, use: http://10.173.166.186:8000
 
   // 1. GET (Read)
   Future<List<TransactionModel>> getTransactions() async {
@@ -56,7 +56,7 @@ class ApiService {
       Uri.parse("$baseUrl/update.php"),
       headers: {"content-type": "application/json"},
       // Kita gabungkan ID dengan data yang mau diedit
-      body: jsonEncode({...data.toJson(), "id": id}), 
+      body: jsonEncode({...data.toJson(), "id": id}),
     );
 
     return response.statusCode == 200;
