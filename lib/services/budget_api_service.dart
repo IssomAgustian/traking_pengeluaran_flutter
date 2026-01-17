@@ -1,9 +1,10 @@
 ﻿import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/budget_model.dart';
+import 'api_config.dart';
 
 class BudgetApiService {
-  final String baseUrl = "http://10.173.166.186:8000"; // Server berjalan di direktori backend
+  final String baseUrl = ApiConfig.baseUrl;
 
   // GET semua anggaran
   Future<List<BudgetModel>> getBudgets() async {

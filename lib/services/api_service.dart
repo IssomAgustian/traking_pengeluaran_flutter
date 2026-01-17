@@ -1,11 +1,10 @@
 ﻿import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/transaction_model.dart';
+import 'api_config.dart';
 
 class ApiService {
-  // PENTING: Ketik ulang baris ini manual jangan copy-paste untuk menghindari error spasi/karakter aneh
-  final String baseUrl = "http://10.173.166.186:8000"; // Server berjalan di direktori backend
-  // For testing with local server, use: http://10.173.166.186:8000
+  final String baseUrl = ApiConfig.baseUrl;
 
   // 1. GET (Read)
   Future<List<TransactionModel>> getTransactions() async {

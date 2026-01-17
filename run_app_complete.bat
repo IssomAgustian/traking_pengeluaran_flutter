@@ -21,15 +21,11 @@ if "!LOCAL_IP!"=="" (
     echo Detected local IP address: !LOCAL_IP!
 )
 
-REM Update the API service files with the detected IP - using a simple replacement
-echo Updating API service with detected IP address...
-powershell -Command "(Get-Content '%~dp0lib\services\api_service.dart') -replace 'http://localhost:8000', 'http://!LOCAL_IP!:8000' | Set-Content -Encoding UTF8 '%~dp0lib\services\api_service.dart'"
-
-echo Updating Budget API service with detected IP address...
-powershell -Command "(Get-Content '%~dp0lib\services\budget_api_service.dart') -replace 'http://localhost:8000', 'http://!LOCAL_IP!:8000' | Set-Content -Encoding UTF8 '%~dp0lib\services\budget_api_service.dart'"
+set "API_BASE_URL=http://!LOCAL_IP!:8000"
+echo Using API base URL: !API_BASE_URL!
 
 REM Start the backend server in a new window
-start "Backend Server" cmd /k "cd /d %~dp0backend && echo Starting PHP server on http://!LOCAL_IP!:8000 && echo Make sure ports 80 and 3306 are available for Apache and MySQL && php -S !LOCAL_IP!:8000 -t ."
+start "Backend Server" cmd /k "cd /d %~dp0backend && echo Starting PHP server on !API_BASE_URL! && echo Make sure ports 80 and 3306 are available for Apache and MySQL && php -S !LOCAL_IP!:8000 -t ."
 
 REM Wait a moment for the server to start
 timeout /t 5 /nobreak >nul
@@ -38,4 +34,4 @@ echo Backend server started in new window.
 echo Now running Flutter app...
 
 REM Run the Flutter application
-flutter run
+flutter run --dart-define=API_BASE_URL=!API_BASE_URL!

@@ -28,38 +28,139 @@ class _BudgetScreenState extends State<BudgetScreen> {
     final monthController = TextEditingController(
       text: isEdit ? budget.month : DateFormat('yyyy-MM').format(DateTime.now()),
     );
-    final categoryController = TextEditingController(
-      text: isEdit ? budget.category : 'Makanan',
-    );
     final amountController = TextEditingController(
       text: isEdit ? budget.amount.toString() : '',
     );
+    String selectedCategory = isEdit ? budget.category : '';
 
     showDialog(
       context: context,
       builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setStateDialog) {
+            Future<void> pickMonth() async {
+              final parsed = DateTime.tryParse('${monthController.text}-01');
+              final initialDate = parsed ?? DateTime.now();
+              final picked = await showDatePicker(
+                context: ctx,
+                initialDate: initialDate,
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2100),
+                helpText: 'Pilih Bulan',
+              );
+              if (picked != null) {
+                setStateDialog(() {
+                  monthController.text =
+                      DateFormat('yyyy-MM').format(DateTime(picked.year, picked.month));
+                });
+              }
+            }
+
+            return AlertDialog(
+              title: Text(isEdit ? "Edit Anggaran" : "Tambah Anggaran"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: monthController,
+                    decoration: const InputDecoration(
+                      labelText: "Bulan (YYYY-MM)",
+                      prefixIcon: Icon(Icons.calendar_today),
+                    ),
+                    readOnly: true,
+                    onTap: pickMonth,
+                  ),
+                  const SizedBox(height: 12),
+                  Consumer<CategoryProvider>(
+                    builder: (context, categoryProvider, child) {
+                      final categories = categoryProvider.expenseCategories;
+                      if (selectedCategory.isEmpty && categories.isNotEmpty) {
+                        selectedCategory = categories.first.name;
+                      } else if (selectedCategory.isNotEmpty &&
+                          categories.isNotEmpty &&
+                          !categories.any((cat) => cat.name == selectedCategory)) {
+                        selectedCategory = categories.first.name;
+                      }
+
+                      return DropdownButtonFormField<String>(
+                        value: selectedCategory.isNotEmpty ? selectedCategory : null,
+                        decoration: const InputDecoration(
+                          labelText: "Kategori",
+                          border: OutlineInputBorder(),
+                        ),
+                        items: categories
+                            .map((cat) => DropdownMenuItem(
+                                  value: cat.name,
+                                  child: Text(cat.name),
+                                ))
+                            .toList(),
+                        onChanged: categories.isEmpty
+                            ? null
+                            : (value) {
+                                if (value != null) {
+                                  setStateDialog(() {
+                                    selectedCategory = value;
+                                  });
+                                }
+                              },
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: amountController,
+                    decoration: const InputDecoration(labelText: "Jumlah Anggaran"),
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Batal"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (monthController.text.isEmpty ||
+                        selectedCategory.isEmpty ||
+                        amountController.text.isEmpty) {
+                      return;
+                    }
+
+                    final newBudget = BudgetModel(
+                      id: isEdit ? budget.id : '',
+                      category: selectedCategory,
+                      amount: double.parse(amountController.text),
+                      month: monthController.text,
+                      createdAt: isEdit ? budget.createdAt : DateTime.now(),
+                    );
+
+                    if (isEdit) {
+                      Provider.of<BudgetProvider>(context, listen: false)
+                          .updateBudget(budget.id, newBudget);
+                    } else {
+                      Provider.of<BudgetProvider>(context, listen: false)
+                          .addBudget(newBudget);
+                    }
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Simpan"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _confirmDeleteBudget(BuildContext context, BudgetModel budget) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
         return AlertDialog(
-          title: Text(isEdit ? "Edit Anggaran" : "Tambah Anggaran"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: monthController,
-                decoration: const InputDecoration(labelText: "Bulan (YYYY-MM)"),
-                keyboardType: TextInputType.text,
-              ),
-              TextField(
-                controller: categoryController,
-                decoration: const InputDecoration(labelText: "Kategori"),
-                keyboardType: TextInputType.text,
-              ),
-              TextField(
-                controller: amountController,
-                decoration: const InputDecoration(labelText: "Jumlah Anggaran"),
-                keyboardType: TextInputType.number,
-              ),
-            ],
-          ),
+          title: const Text("Hapus Anggaran"),
+          content: Text("Hapus anggaran ${budget.category} - ${budget.month}?"),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -67,28 +168,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (monthController.text.isEmpty || 
-                    categoryController.text.isEmpty || 
-                    amountController.text.isEmpty) return;
-
-                final newBudget = BudgetModel(
-                  id: isEdit ? budget.id : '',
-                  category: categoryController.text,
-                  amount: double.parse(amountController.text),
-                  month: monthController.text,
-                  createdAt: isEdit ? budget.createdAt : DateTime.now(),
-                );
-
-                if (isEdit) {
-                  Provider.of<BudgetProvider>(context, listen: false)
-                      .updateBudget(budget.id, newBudget);
-                } else {
-                  Provider.of<BudgetProvider>(context, listen: false)
-                      .addBudget(newBudget);
-                }
+                Provider.of<BudgetProvider>(context, listen: false)
+                    .deleteBudget(budget.id);
                 Navigator.pop(context);
               },
-              child: const Text("Simpan"),
+              child: const Text("Hapus"),
             ),
           ],
         );
@@ -141,9 +225,18 @@ class _BudgetScreenState extends State<BudgetScreen> {
                               ),
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () => _showBudgetDialog(context, budget: budget),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit),
+                                onPressed: () => _showBudgetDialog(context, budget: budget),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _confirmDeleteBudget(context, budget),
+                              ),
+                            ],
                           ),
                         ],
                       ),
